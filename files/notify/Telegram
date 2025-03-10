@@ -9,17 +9,23 @@
 
 start() {
 	local retry='--connect-timeout 3 --retry 5'
-	$CURL $retry -L -o /dev/null -X POST \
+	
+	# 如果 HTTP_PROXY 不为空，则添加 -x 参数
+	local proxy_param=${HTTP_PROXY:+-x $HTTP_PROXY}
+	
+	# 如果 custom_domain 为空，则使用默认值 api.telegram.org
+	local api_url="https://${custom_domain:-api.telegram.org}/bot${TOKEN}/sendMessage"
+	
+	$CURL $retry -L -o /dev/null -X POST ${proxy_param} \
 		-H 'Content-Type: application/json' \
 		-d '{"chat_id":"'"${CHAT_ID}"'","text":"'"${text}"'","parse_mode":"HTML","disable_notification":"false"}' \
-		--url "https://${custom_domain:-api.telegram.org}/bot${TOKEN}/sendMessage"
+		--url "$api_url"
 }
-
 
 # All external parameters required
 ALL_PARAMS="custom_domain text tokens"
 eval "$(JSON_EXPORT "$1")"; shift
 # All external tokens required
-INIT_GLOBAL_VAR TOKEN CHAT_ID
+INIT_GLOBAL_VAR TOKEN CHAT_ID HTTP_PROXY
 eval "$tokens"
 start "$@"
